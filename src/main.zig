@@ -9,7 +9,7 @@ pub fn main() anyerror!void {
     const screenWidth = 800;
     const screenHeight = 450;
 
-    var t = 0.0;
+    var t:f64 = 0.0;
     const dt = 2500.0;
     const num_objects = 3;
     var x: [num_objects]f64 = [_]f64{
@@ -25,12 +25,12 @@ pub fn main() anyerror!void {
     var vx: [num_objects]f64 = [_]f64{
         0.0,
         0.0,
-        -500.0,
+        -300.0,
     };
     var vy: [num_objects]f64 = [_]f64{
         0.0,
-        1400.0,
-        1400.0,
+        1000.0,
+        1000.0,
     };
     const m: [num_objects]f64 = [_]f64{
         5.97e24, // Mass of Earth in kg
@@ -51,9 +51,7 @@ pub fn main() anyerror!void {
 
         // Calculate gravitational forces between all pairs
         for (0..num_objects) |i| {
-            for (0..num_objects) |j| {
-                if (i == j) continue;
-
+            for (i + 1..num_objects) |j| {
                 const deltaX = x[j] - x[i];
                 const deltaY = y[j] - y[i];
                 var r = @sqrt(deltaX * deltaX + deltaY * deltaY);
@@ -111,12 +109,12 @@ pub fn main() anyerror!void {
             rl.drawCircle(screen_x + 400, screen_y + 200, radius, color);
         }
 
-        const string = try std.fmt.allocPrintZ(allocator, "G: {e}", .{ G });
-        defer allocator.free(string);
-        rl.drawText(string, 5, 5, 20, rl.Color.black);
+        const gstr = try std.fmt.allocPrintZ(allocator, "G: {e}", .{ G });
+        defer allocator.free(gstr);
+        rl.drawText(gstr, 5, 5, 20, rl.Color.black);
 
-        string = try std.fmt.allocPrintZ(allocator, "t: {e}", .{ t });
-        defer allocator.free(string);
-        rl.drawText(string, 5, 15, 20, rl.Color.black);
+        const tstr = try std.fmt.allocPrintZ(allocator, "t: {d}", .{ t });
+        defer allocator.free(tstr);
+        rl.drawText(tstr, 5, 22, 20, rl.Color.black);
     }
 }
