@@ -133,7 +133,7 @@ pub fn main() anyerror!void {
     var t:f64 = 0.0;
     const dt = 500.0;
 
-    const system = try System.initGrid(allocator, rnd, 5);
+    const system = try System.initGrid(allocator, rnd, 10);
     defer system.deinit(allocator);
 
     rl.setConfigFlags(.{ .msaa_4x_hint = true });
@@ -143,7 +143,52 @@ pub fn main() anyerror!void {
 
     rl.setTargetFPS(60);
 
+    var camera = rl.Camera2D {
+        .offset = rl.Vector2.init(screenWidth / 2.0, screenHeight / 2.0),
+        .target = rl.Vector2.init(0.0, 0.0),
+        .rotation = 0.0,
+        .zoom = 1.0,
+    };
+
     while (!rl.windowShouldClose()) {
+        // Controls
+        camera.zoom += rl.getMouseWheelMove() * 0.05;
+
+        if (rl.isMouseButtonDown(rl.MouseButton.middle)) {
+            const delta = rl.getMouseDelta().scale(-1.0 / camera.zoom);
+            camera.target = camera.target.add(delta);
+        }
+
+        const wheel = rl.getMouseWheelMove();
+        if (wheel != 0) {
+            const mouseWorldPos = rl.getScreenToWorld2D(rl.getMousePosition(), camera);
+            camera.offset = rl.getMousePosition();
+            camera.target = mouseWorldPos;
+            var scaleFactor = 1.0 + (0.25 * @abs(wheel));
+            if (wheel < 0) {
+                scaleFactor = 1.0 / scaleFactor;
+            }
+            var newZoom = camera.zoom * scaleFactor;
+            if (newZoom < 0.125) {
+                newZoom = 0.125;
+            } else if (newZoom > 64.0) {
+                newZoom = 64.0;
+            }
+            camera.zoom = newZoom;
+        }
+
+
+        if (camera.zoom > 3.0) {
+            camera.zoom = 3.0;
+        } else if (camera.zoom < 0.1) {
+            camera.zoom = 0.1;
+        }
+
+        if (rl.isKeyPressed(rl.KeyboardKey.r)) {
+            camera.zoom = 1.0;
+            camera.target = .{ .x = 0.0, .y = 0.0 };
+        }
+
         // Calculate gravitational forces between all pairs
         for (0..system.num_objects) |i| {
             for (i + 1..system.num_objects) |j| {
@@ -184,14 +229,18 @@ pub fn main() anyerror!void {
 
         rl.clearBackground(rl.Color.dark_gray);
 
+        camera.begin();
+
         // Draw objects
         for (0..system.num_objects) |i| {
             const screen_x:i32 = @intFromFloat(system.x[i] / 2000000.0);
             const screen_y:i32 = @intFromFloat(system.y[i] / 2000000.0);
             const screen_r:f32 = @floatCast(system.m[i] / 1e23);
 
-            rl.drawCircle(screen_x + 400, screen_y + 200, screen_r + 3.0, rl.Color.light_gray);
+            rl.drawCircle(screen_x, screen_y, screen_r + 3.0, rl.Color.light_gray);
         }
+
+        camera.end();
 
         const gstr = try std.fmt.allocPrintZ(allocator, "G: {e}", .{ G });
         defer allocator.free(gstr);
