@@ -15,7 +15,7 @@ const System = struct {
     m: []f64,
     num_objects: usize,
 
-    fn initGrid(alloc: std.mem.Allocator, rnd: std.rand.Random, comptime grid_size: usize) !@This() {
+    fn initGrid(alloc: std.mem.Allocator, rnd: std.Random, comptime grid_size: usize) !@This() {
         const num_objects = grid_size * grid_size;
 
         const system = try init(alloc, num_objects);
@@ -52,7 +52,7 @@ const System = struct {
         return system;
     }
 
-    fn initShip(alloc: std.mem.Allocator, rnd: std.rand.Random) !@This() {
+    fn initShip(alloc: std.mem.Allocator, rnd: std.Random) !@This() {
         const num_objects = 3;
         _ = rnd;
 
@@ -127,14 +127,17 @@ pub fn main() anyerror!void {
     const screenWidth = 1280;
     const screenHeight = 720;
 
-    var random = std.rand.DefaultPrng.init(12345);
+    var random = std.Random.DefaultPrng.init(12345);
     const rnd = random.random();
 
     var t:f64 = 0.0;
     const dt = 500.0;
 
-    const system = try System.initGrid(allocator, rnd, 10);
+    const system = try System.initShip(allocator, rnd);
     defer system.deinit(allocator);
+
+//    const system = try System.initGrid(allocator, rnd, 10);
+//    defer system.deinit(allocator);
 
     rl.setConfigFlags(.{ .msaa_4x_hint = true });
 
@@ -238,6 +241,7 @@ pub fn main() anyerror!void {
             const screen_r:f32 = @floatCast(system.m[i] / 1e23);
 
             rl.drawCircle(screen_x, screen_y, screen_r + 3.0, rl.Color.light_gray);
+            rl.drawCircle(screen_x, screen_y, screen_r + 1.0, rl.Color.dark_gray);
         }
 
         camera.end();
